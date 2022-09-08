@@ -4,29 +4,40 @@
 
 Creates the fasta file ```kmers.fasta```.
 
-## cancerGenomics.sh
+## find_dmel_orf.py
 
-Bash script to trnder the RNotebook to an html file. 
+Finds the first open reading frame (ORF) frome the non-local fasta file ```/scratch/Drosophila/dmel-all-chromosome-r6.17.fasta```. Translates the OFT to protein and prints out the protein.
+
+## find_orf.py
+
+Finds the ORF from a DNA sequence.
+
+## format.py
+
+Creates a template to print out an organized message.
+
+## read_seq.py
+
+Takes a non-local fasta file and prints out the record id.
+
+## readseq2.py
+
+Uses the template from ```format.py``` and prints out an organized message about a non-local fatsa file.
+
+## transcribe.py
+
+Transcribes a line of random DNA and prints out the RNA.
+
+## translate.py
+
+Prints out a protein sequence that has been translated from transcribed RNA.
 
 ## Getting Started
 
 ### Dependencies
 
-* bash
-* maftools 
-* tcga_laml.maf.gz - TCGA LAML MAF file
-* tcga_laml.annot.tsv - Metadata containing clinical information of survival history and histology
-* LAML_sig_genes.txt.gz  
-* APL_primary.maf.gz
-* APL_relapse.maf.gz
-* brca.maf.gz
-* R
-* RStudio - IDE
-* Tutorial - https://bioconductor.org/packages/release/bioc/vignettes/maftools/inst/doc/maftools.html
-
-## Results
-
-View canerGenomics.md or cancerGenomics.html 
+* Python3
+* A fasta file of coice - used a nonlocal file (not attached)
 
 ## Author
 
@@ -34,4 +45,4 @@ Victoria R. Liebsch-Aljawahiri
 
 ## Date Created
 
-22 April 2022
+11 October 2021
