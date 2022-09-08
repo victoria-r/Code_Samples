@@ -6,6 +6,8 @@ These files contain infomration that may not be used to copy as they may still b
 
 Thank you.
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # Cancer Genomics
 
 ## cancerGenomics.Rmd
@@ -50,3 +52,28 @@ Mayakonda, Anand, De-Chen Lin, Yassen Assenov, Christoph Plass, and H. Phillip K
 
 Network, Cancer Genome Atlas Research, Timothy J. Ley, Christopher Miller, Li Ding, Benjamin J. Raphael, Andrew J. Mungall, A. Gordon Robertson, et al. 2013. “Genomic and Epigenomic Landscapes of Adult de Novo Acute Myeloid Leukemia.” *The New England Journal of Medicine* 368 (22): 2059–74..
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# translate_APOE.py
+
+This script translates the APOE ortholog sequences from nucleotide sequences to amino acid sequences using BioPython. Creates a fasta file called apoe_aa.fasta that contains the translated orthologs. 
+
+# align_APOE.sh
+
+This script uses Clustal Omega to align the translated APOE orthologs from apoe_aa.fatsa. Creates a fasta file called aligned_apoe.fasta that contains the aligned orthologs.
+
+## Getting Started
+
+### Dependencies
+
+* python3
+* biopython
+* clustalo
+
+## Author
+
+Victoria R. Liebsch
+
+## Date Created - All programs
+
+5 March 2022
