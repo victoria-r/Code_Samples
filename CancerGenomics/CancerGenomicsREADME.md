@@ -26,7 +26,7 @@ Bash script to trnder the RNotebook to an html file.
 
 ## Results
 
-View canerGenomics.md or cancerGenomics.html 
+View ```canerGenomics.md``` or ```cancerGenomics.html```
 
 ## Author
 
