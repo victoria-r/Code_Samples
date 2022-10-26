@@ -1,0 +1,342 @@
+---
+title: "Practicum 1"
+author: "Victoria Liebsch-Aljawahiri, Eni Cerma, Vrunda Patel"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: kate
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparations
+
+Multiple libraries were loaded for use.
+
+```{r, message=FALSE}
+# Load required libraries
+library(tidyverse)
+library(stringr)
+library(skimr)
+library(janitor)
+library(scales)
+library(readr)
+library(XML)
+library(xml2)
+library(glue)
+library(viridis)
+```
+
+
+# Part 1
+
+Some of the following questions will use the ```mtcars``` pre-loaded data set. 
+
+## Question 1
+
+Create a dataframe with 4 variables. The 4 variables should be ```doctor_type```, ```doctor_lastname```, ```location```, ```AVG_Rating```. The variable ```doctor_type``` should contain 4 inputs (PCP, Psychiatrist, Surgeon, Anesthesia). The variable ```doctor_lastname``` should contain 4 inputs (Smith, Dame, Jones, Zayas). The variable ```location``` should contain 4 inputs (MA, ME, NH, VT). The variable ```AVG_Rating``` should contain 4 inputs (7,9,8,9). Print the dataframe. 
+
+```{r}
+# Make variables
+doctor_type <- c("PCP", "Psychiatrist", "Surgeon", "Anesthesia")
+
+doctor_lastname <- c("Smith", "Dame", "Jones", "Zayas")
+
+location <- c("MA", "ME", "NH", "VT")
+
+AVG_rating <- c(7, 9, 8, 9)
+
+# Make dataframe
+doctor.df <- data.frame(doctor_type, doctor_lastname, location, AVG_rating)
+
+# Show dataframe
+doctor.df
+```
+
+## Question 2
+
+Using the dataframe above... Select row 1 in column 2, what was selected? Select rows 2 through 4, what was selected? Select the last column, what was selected? 
+
+```{r}
+# Select row 1 in column 2
+doctor.df[1, 2]
+
+# Select rows 2 - 4
+doctor.df[2:4,]
+
+# Select the last column
+rev(doctor.df)[1]
+```
+
+Row 1 in column 2 results in the "Smith" ```doctor_lastname```. Rows 2 through 4 results in the observation for "Psychiatrist", "Surgeon" and "Anesthesia". Selecting the last column, shows the ```Avg_Rating``` column.
+
+## Question 3
+
+Using the dataset Mtcars create a scatterplot showing the relations between any two variables of your choosing. Explain why you picked those variables. 
+Each point should also be based on a color scheme of your choosing.
+
+```{r}
+# Inspect data
+head(mtcars)
+
+# Theme for plot
+cool_theme <- function() {
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Bookman", color = "gray25"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(color = "gray30"),
+    plot.background = element_rect(fill = "gray95"),
+    plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+  )
+}
+
+# Make graph
+ggplot(mtcars, aes(x = mpg, y = wt, color = cyl)) +
+  geom_point() +
+  labs(title = "Relationship of vehicle weight on fuel efficiency",
+       x = "Miles per Gallon (mpg)",
+       y = "Weight (1000 lbs)",
+       caption = "Source: mtcars dataset") +
+  cool_theme() +
+  scale_color_viridis(option = "D")
+```
+
+The scatterplot shows the relationship between fuel efficiency and vehicle weight. We chose these variables because we wanted to see how vehicle weight impacts fuel efficiency. From the graph below we can see that the more a vehicle weights, the lower the fuel efficiency. Additionally, the higher larger the cylinder the less fuel efficient.
+
+## Question 4
+
+Using the dataset ```mtcars``` perform a summary statistic on the dataset and calculate the pearson coefficient of the correlation R picking two variables of choice. 
+Explain why you picked those variables and explain the purpose of a pearson coefficient. 
+
+```{r}
+# Summary statistics
+summary(mtcars)
+
+# Calculate the pearson coefficient
+cor(mtcars$cyl, mtcars$hp, use = "complete.obs", method = "pearson")
+```
+
+Running summary statistics. The correlation between cylinder and horsepower is ~0.8 which is higher than 0.5, and indicates a strong positive correlation between ```cyl``` and ```hp```. We chose these variables because we wanted to see the correlation between vehicle cylinder and horsepower. We knew they would have a positive correlation, but we were wondering how strong the correlation was. Since it is over 0.5 and nearing 1.0, it has a strong positive correlation. The Pearson coefficient is used to indicate the strength of a relationship between two variables. Although it reveals the strength of a relationship, it does not indicate causation. 
+
+# Part 2
+
+The following questions will use the ["Substance Use Disorder Treatment Program Admissions: Beginning 2007"](https://data.ny.gov/api/views/ngbt-9rwf/rows.xml) XML data. You are given the task of performing a comprehensive analysis of the admission statistics from 2007 to 2019 and summarize your findings with an accompanying narrative that explains your process-flow. 
+
+## Question 1
+
+Load the data, directly from the URL, into your R environment. 
+
+```{r}
+# Load xml from url
+file_url <- read_xml("https://data.ny.gov/api/views/ngbt-9rwf/rows.xml")
+
+xml_doc <- xmlParse(file_url, asText = TRUE)
+
+# Make rows
+year <- xpathSApply(xml_doc, '//row/year', xmlValue)
+county_of_program_location <- xpathSApply(xml_doc, '//row/county_of_program_location', xmlValue)
+program_category <- xpathSApply(xml_doc, '//row/program_category', xmlValue)
+service_type <- xpathSApply(xml_doc, '//row/service_type', xmlValue)
+age_group <- xpathSApply(xml_doc, '//row/age_group', xmlValue)
+primary_substance_group <- xpathSApply(xml_doc, '//row/primary_substance_group', xmlValue)
+admissions <- xpathSApply(xml_doc, '//row/admissions', xmlValue)
+
+# Make tibble 
+chemical_dependance <- tibble(year,county_of_program_location, program_category, service_type, age_group, primary_substance_group, admissions) %>% 
+  mutate(across(c(admissions, year), as.numeric)) 
+
+head(chemical_dependance)
+```
+
+After parsing using ```xml_parse()``` we created a tibble. First we used ```xpathApply()``` which uses the xml_doc after the parsing and pulls the values we needed to create the tibble. In our console, we used get ```getsetnode()``` to pull the nodes, which is row. Then using the node path, we pulled the values from each child note across all the document that have ```year```, ```county_of_program_location```, ```program_category```, ```service_type```, ```age_group```, ```primary_substance_group``` and ```admissions```. 
+
+## Question 2
+
+Evaluate the dataset to determine what data preparation steps are needed and perform them. At a minimum, ensure that you discuss the distribution of the data, outliers and prepare any helpful summary statistics to support your analysis. 
+
+```{r}
+# Show dimensions
+glimpse(chemical_dependance)
+summary(chemical_dependance)
+
+# Plot showing outliers and skewed data
+ggplot(chemical_dependance, aes(x = admissions)) + 
+  geom_histogram(binwidth = 50, fill = "darkcyan") + 
+  coord_cartesian(ylim = c(0, 2000)) +
+  cool_theme() +
+  labs(title = "Admissions into Subtance Use Disorder Treatment Programs",
+       x = "Admissions",
+       y = "Count",
+       caption = "Source: Office of Addiction Services and Supports.")
+
+# Calculate z-score of admissions
+mean_tip <- mean(chemical_dependance$admissions) 
+sd_tip <- sd(chemical_dependance$admissions)
+z_tip <- (abs(mean_tip - chemical_dependance$admissions) / sd_tip) 
+
+# Remove outliers (<3 sd from mean)
+chemical_dependance_no_outliers <- chemical_dependance %>% 
+  filter(z_tip < 3) 
+
+summary(chemical_dependance_no_outliers)
+```
+
+After loading and scrapping the XML file, we performed summary statistics by identifying outliers and removing the outliers. We are assuming that outliers are 3 standard deviations away from the mean. The mean is higher than the median, which means that there are large positive outliers that are skewing the distribution to the right. For instance, the max admission is 2,861 which occurred in New York in 2007. Furthermore, we created a histogram to show that distribution. 
+
+## Question 3
+
+Structure the data relationally, at a minimum, you should have four tibbles or data frames as follows: `county`, `program_category`, `primary_substance_group`, and
+`admission_data`. 
+
+```{r}
+# county tibble 
+county <- chemical_dependance_no_outliers %>% 
+  select(county_of_program_location) %>% 
+  mutate(county_code = recode(county_of_program_location, "Albany" = "AL",
+    "Cattaraugus" = "CA", "Chenango" = "CN", "Delaware"	= "DE", "Franklin" =	"FR",
+    "Lewis" =	"LE", "Montgomery"=	"MG", "Oneida" = "ON", "Orleans" = "OL",
+    "Queens" = "NY", "Saint Lawrence" = "SL", "Schuyler" = "SY", "Sullivan" = "SV",
+    "Warren" = "WR", "Wyoming" = "WY", "Allegany" = "AG", "Cayuga" = "CY",
+    "Clinton" = "CL", "Dutchess" = "DU", "Fulton" = "FU", "Herkimer" = "HE",
+    "Livingston" = "LI", "Nassau" = "NA", "Onondaga" = "OD", "Oswego" = "OS",
+    "Rensselaer" = "RE", "Saratoga" = "SA", "Seneca" = "SE", "Tioga" = "TI",
+    "Washington" = "WS", "Yates" = "YA", "Bronx" = "NY", "New York" = "NY", 
+    "Richmond" = "NY", "Kings" = "NY", "Columbia" = "CO", "Erie" = "ER",
+    "Genesee" = "GE", "Jefferson" = "JE","Madison" = "MA", "Ontario" = "OT",
+    "Otsego" = "OG", "Schenectady" = "SC",  "Steuben" = "ST", "Tompkins" = "TO",
+    "Wayne" = "WA", "Broome" = "BM", "Chemung" = "CM", "Cortland" = "CR",
+    "Essex" = "ES", "Greene" = "GR", "Monroe" = "MO", "Niagara" = "NI",
+    "Orange" = "OR","Putnam" = "PU", "Rockland" = "RO", "Schoharie" = "SH",
+   "Suffolk" = "SU", "Ulster" = "UL", "Westchester" = "WE", "Allegany" = "AG",
+    "Chautauqua" = "CH", "Cortland" = "CR", "Herkimer" = "HE", "Ulster" = "UL",
+    "Cattaraugus" = "CA")) %>% 
+  distinct()
+
+county
+ 
+# program_category tibble 
+program_category <- chemical_dependance_no_outliers %>% 
+  select(program_category) %>% 
+  mutate(program_code = recode(program_category, "Crisis" = "CR", "Inpatient" = "IN",  "Opioid Treatment Program" = "OPT", "Residential" = "R", "Outpatient" = "OUT", "Specialized" = "SP")) %>% 
+  distinct()
+
+program_category  
+
+# primary_substance_group tibble 
+primary_substance_group <- chemical_dependance_no_outliers %>% 
+  select(primary_substance_group) %>% 
+  distinct() %>% 
+  mutate(substance_code = recode(primary_substance_group, "Heroin" = "H", "All Others" = "ALO", "Other Opioids" = "OOP", "Alcohol" = "AL", "Cocaine" = "C", "Marijuana" = "M", "None" = "N"))
+
+primary_substance_group
+
+# admissions_data tibble 
+admissions_data <- chemical_dependance_no_outliers %>% 
+  right_join(program_category, by = "program_category") %>% 
+  right_join(primary_substance_group, by = "primary_substance_group") %>%
+  right_join(county, by = "county_of_program_location") %>% 
+  select(year, county_code, county_of_program_location, program_code, program_category, service_type, age_group, substance_code, primary_substance_group,admissions) %>% 
+  select(-county_of_program_location, -program_category, -primary_substance_group)
+
+head(admissions_data)
+```
+
+## Question 4
+
+Create a function called ```annualAdmissions()``` that derives the total number of reported admissions that transpired each year, for the entire state of NY and displays the results using a line chart. Annotate the chart to show the year with the highest number of admissions. Note: the year should be on the x-axis and the number of admissions on the y-axis. Explain the chart. 
+
+```{r}
+# Make function - still need to annotate
+annualAdmissions <- function() {
+  xx <- chemical_dependance_no_outliers %>%
+    group_by(year) %>%
+    summarize(total_admissions = sum(admissions)) %>%
+    ggplot(aes(x = year, y = total_admissions)) +
+    geom_line(stat = "identity", color = "darkcyan") +
+    scale_x_continuous(name = "Year", breaks = seq(from = 2007, to = 2022, by = 1)) +
+    cool_theme() +
+    scale_y_continuous(name = "Admissions") +
+    labs(title = "Total Admissions per Year",
+         caption =  str_wrap("Source: Office of Addiction Services and Supports.")) +
+    annotate(geom = "point", x = 2016, y = 190000, 
+             size = 10, shape = 21, fill="transparent", color = "violetred") +
+     annotate(geom = "text", x = 2016, y = 185000, 
+             label = "Peak year \n 2016", family = "Bookman",
+             color = "gray25", size = 3) 
+  return(xx)
+}
+
+# Call function
+annualAdmissions()
+```
+
+We created a function called ```annualAdmissions()``` that calculates the total amount of admissions for each year (from 2007 - 2021) and creates a line chart and labels the year where the highest admissions. The data used is the data without outliers. Due to the skewed distibution (shown in the Question 2 graph), we decided to use the data without the outliers to have a better understanding of the data. The line chart shows that from 2007 to to 2016 the number of admissions increased and decreased minimally. The peak year is of admissions is 2016, and there was a significant drop from 2018 to 2021. 
+
+## Question 5
+
+Analyze the percentage of admissions for each county and visualize the results for the top 5 counties using a bar chart. Explain the results.
+
+```{r}
+# Make tibble of percentages
+counties_percent <- admissions_data %>%
+group_by(county_code) %>%
+summarize(total_admissions = sum(admissions), 
+          total_percentages = round(sum(admissions)/sum(admissions_data$admissions), 3)) 
+
+counties_percent
+
+# Top counties
+top_counties <- counties_percent %>%
+  arrange(total_admissions) %>% 
+  top_n(5,total_admissions)
+  
+top_counties
+
+# Make graph
+ggplot(top_counties, aes(x = county_code, y = total_percentages, fill = county_code)) +
+  geom_bar(stat = 'identity') + 
+  labs(x = "Counties", y = "Admission Percent",
+       title = "Percentage of Admissions for the Top 5 NY counties",
+        caption = str_wrap("Source: Office of Addiction Services and Supports.")) + 
+  cool_theme() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = seq(from = 0.05, to = 0.30, by = 0.05)) +
+  scale_fill_discrete(name = "County Names", labels = c("Erie", "New York", "Onandaga", 
+                                                           "Suffolk", "Westchester"))
+```
+
+Analyzing the percentage of admissions for each country. We grouped by county and calculated the total admissions by county as a percentage of total admissions from 2007-2021. New York, which includes Queens, Bronx, New York City(usually Manhattan) Kings and Richmond county, Erie, Onondaga, Westchester, and Suffolk were the top five counties with the highest percentage of admissions. New York is the top county but that also means that it covers a larger area than the rest of the counties. Furthermore,New York population is concentrated in the boroughs, which makes sense that NY is the highest county with the top % of admissions. 
+
+## Question 6
+
+Filter the data, using a regular expression, and extract all admissions to the various “Rehab” facilities; i.e. your regex should match all facilities that include the word rehab, rehabilitation, etc. Using the filtered data, identify which substance is the most prominent among each age group. Visualize and explain the results.
+
+```{r}
+# Filter for "Rehab" facilities
+admissions_data %>%
+  filter(str_detect(service_type, 'Rehab|Rehabilitation')) %>%
+  select(service_type, age_group, substance_code, admissions) %>% 
+  group_by_at(vars(substance_code, age_group)) %>% 
+  summarize(total_admissions = sum(admissions), .groups = "keep") %>%
+  # Make graph
+  ggplot(aes(x = substance_code, y = total_admissions, fill = substance_code)) + 
+  geom_bar(stat = 'identity') + facet_wrap(vars(age_group), ncol = 2, dir = "h") + 
+  labs(x ="Primary Substance Group", 
+       y = "Total Admissions",
+       title = "Most common Subtance per Age Group in Rehab facilities",
+       caption =  str_wrap("Source: Office of Addiction Services and Supports.")) +
+  cool_theme() +
+  theme(panel.spacing.x = unit(1.5, "lines"),
+        strip.background = element_rect(fill = "gray60",color = "gray95"),
+        strip.text = element_text(color = "white")) +
+  scale_fill_discrete(name = "Substance Names", labels = c("Alcohol", "All Others", "Cocaine", 
+                                                           "Heroin", "Marijuana", "Other Opioids"))
+```
+
+Filtering the data using a regex expression that matches all facilities that include rehab and rehabilitation. With the filtered data we identified which substance is the most prominent among each age group. For instance, age 35-44 has the highest total admissions for alcohol. 18-24 and 25-34 have the highest admission for heroin. For age groups 55+ and 45-55 the highest substance is alcohol, and for under 18 it is marijuana.   
+
