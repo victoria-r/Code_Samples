@@ -1,0 +1,231 @@
+---
+title: "Assignment 6 DA5020"
+author: "Victoria Liebsch-Aljawahiri"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    highlight: kate
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparations
+
+Load required libraries and custom functions.
+
+```{r, message = FALSE}
+# Libraries
+library(DBI)
+library(RSQLite)
+library(tidyverse)
+library(stringr)
+library(skimr)
+library(janitor)
+library(scales)
+library(readr)
+library(glue)
+library(viridis)
+
+# Functions
+# Theme for plot
+cool_theme <- function() {
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Bookman", color = "gray25"),
+    plot.subtitle = element_text(size = 12),
+    plot.caption = element_text(color = "gray30"),
+    plot.background = element_rect(fill = "gray95"),
+    plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+  )
+}
+```
+
+## Question 1
+
+This question should be done completely in the SQLite Console, not in R. Start by loading the 
+imdb.db file using the console and download the directors.csv file.
+
+#### 1. Create a table named `director_info` using SQLite; the columns are: `Director_ID`, and
+#### `Director_Name`. The `Director_ID` should be the primary key.
+
+```{sql eval=FALSE, class.source = 'fold-show'}
+/* Enter SQLite in terminal */
+sqlite3
+
+/* Load file */
+.open "Desktop/DA5020/Assignment_6/imdb.db"
+
+/* Create table */
+CREATE TABLE director_info (
+  Director_ID INTEGER PRIMARY KEY,
+  Director_Name TEXT NOT NULL
+);
+
+/* Check that table was created */
+.schema
+
+```
+
+#### 2. Import the entire data from the CSV file into the `director_info` table using the SQLite .import command.
+#### Verify that your data was imported correctly.
+
+```{sql eval=FALSE, class.source = 'fold-show'}
+/* Import data from CSV */
+.mode csv
+.import "Desktop/DA5020/Assignment_6/directors.csv" director_info
+
+/* Check table */
+.schema director_info
+
+/* Show tables */
+.mode column
+.headers on
+select * from director_info;
+```
+
+Top 10 results in the table `director_info`:
+
+Director_ID  Director_Name                   
+-----------  --------------------------------
+1            Aamir Khan                      
+2            Aaron Sorkin                    
+3            Abdellatif Kechiche             
+4            Abhishek Chaubey                
+5            Abhishek Kapoor                 
+6            Adam Elliot                     
+7            Adam McKay                      
+8            Aditya Chopra                   
+9            Aditya Dhar                     
+10           Akira Kurosawa       
+
+The director ID's were automatically sorted in descending order upon importing. 
+
+
+## Question 2
+
+Connect to the database, using R, and write queries to answer 
+the questions below (answer each question in a separate R chunk). Do not load the entire database or its 
+tables in your R environment. 
+
+#### 1. Count the number of rows in the `movie_info` and `director_info` tables. 
+
+```{r}
+# Connect to file and view tables
+db <- dbConnect(SQLite(), dbname = '~/Desktop/DA5020/Assignment_6/imdb.db')
+dbListTables(db)
+
+# Count rows
+dbGetQuery(db, 'SELECT COUNT(*) FROM movie_info')
+
+dbGetQuery(db, 'SELECT COUNT(*) FROM director_info')
+```
+
+The table `movie_info` has 1000 rows and the table `director_info` has 548 rows.
+
+
+#### 2.  How many movies were released between 2010 and 2020 (inclusive)? Visualize the results.
+
+```{r}
+# Show movie count from 2010 - 2020
+dbGetQuery(db, 'SELECT COUNT(Release_Year)
+           FROM movie_info WHERE Release_Year >= 2010 AND Release_Year <= 2020')
+
+# Make graph
+a <- dbGetQuery(db, 'SELECT Release_Year FROM movie_info
+                WHERE Release_Year >= 2010 AND Release_Year <= 2020')
+
+ggplot(a, aes(x = Release_Year)) +
+  geom_bar(fill = "darkcyan") +
+  cool_theme() +
+  labs(title = "Amount of Movies Released between 2010 and 2020",
+       x = "Release Year",
+       y = "Count")
+
+```
+
+Between the years 2010 and 2020, there were 240 movies released. The year with the most movies released between 2010 and 2020 is 2014. The year with the least movies released was 2020.
+
+
+#### 3. What is the minimum, average and maximum ratings for “Action” movies.
+#### Ensure that you query the genre using wild cards.
+
+```{r}
+# Minimum
+dbGetQuery(db, 'SELECT MIN(IMDB_Rating) FROM movie_info
+           WHERE Genre LIKE "%Action%"')
+
+# Average
+dbGetQuery(db, 'SELECT AVG(IMDB_Rating) FROM movie_info
+           WHERE Genre LIKE "%Action%"')
+
+# Maximum
+dbGetQuery(db, 'SELECT MAX(IMDB_Rating) FROM movie_info
+           WHERE Genre LIKE "%Action%"')
+```
+
+The minimum rating for Action movies is 7.6. The average rating for Action movies is ~7.9. The maximum rating for Action movies is 9.
+
+
+#### 4. What are the 25 highest-grossing movies within the dataset? Display the title, genre and gross. 
+
+```{r}
+# Top 25 
+knitr::kable(dbGetQuery(db, 'SELECT Series_Title, Genre, Gross FROM movie_info 
+           WHERE NOT Gross = "NA" ORDER BY Gross DESC LIMIT 25'))
+```
+
+
+#### 5. Which directors have the highest-grossing movies. Display the director name and the total gross.
+#### Ensure that you join the necessary tables. Visualize the results using a Bar chart. 
+
+```{r}
+# Join tables and get highest gross per Director
+z <- dbGetQuery(db, 'SELECT director_info.Director_Name, movie_info.Gross 
+           FROM movie_info INNER JOIN director_info 
+           ON movie_info.Director_ID=director_info.Director_ID 
+           WHERE NOT Gross = "NA" ORDER BY Gross DESC')
+
+z2 <- aggregate(. ~ Director_Name, z, sum, na.rm = TRUE)
+
+z2 %>%
+  arrange(desc(Gross)) %>%
+  top_n(25, Gross) %>%
+  ggplot(aes(x = Director_Name, y = Gross)) +
+  geom_bar(stat = "identity", fill = "darkcyan") +
+  coord_flip() +
+  cool_theme() +
+  labs(title = "Top 25 Directors with the Highest Grossing Movies",
+       x = "Director Name") 
+```
+
+The director with the highest cumulative grossing movies is Steven Spielberg, with a total gross of nearly 2,500,000,000.
+
+
+#### 6. Create a function called `verifyDirector()` that takes a director name as its argument, and 
+#### queries the database to check if the director exists. Your function should display a message to notify 
+#### the user if the director was found or not. 
+
+```{r class.source = 'fold-show'}
+# Create function
+verifyDirector <- function(name) {
+  sqlCmd = 'SELECT * FROM director_info WHERE Director_Name = :x'
+  query <- dbSendQuery(db, sqlCmd)
+  dbBind(query, params = list(x = name))
+  rs <- dbFetch(query)
+  s <- if (nrow(rs) < 1) {
+    print("Director not found")
+  } else {
+    print("Director found")
+    print(rs)
+  }
+  dbClearResult(query)
+}
+
+# Test function
+verifyDirector("Brad Bird")
+```
+
