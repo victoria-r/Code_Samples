@@ -4,7 +4,7 @@ This repository contains samples of relevant code I have worked on for assignmen
 
 ### Disclaimer
 
-These files contain information that may not be copied as they may still be part of relevant academic assignments. Please, if you are having trouble or are stuck in your code, reach out to your professor for guidence. If you copy code it can be traced back to the source which can result in various academic issues. Remember to always cite your sources.
+These files may contain information that can not be copied as they may still be part of relevant academic coursework. Please, if you are having trouble or are stuck in your code, reach out to your professor for guidence. If you copy code it can be traced back to the source which can result in various academic issues. Remember to always cite your sources.
 
 ## Thank you.
 
